@@ -1,0 +1,78 @@
+// ================================================
+// 3D-модель: Смітник для стіків IQOS на перила
+// ================================================
+
+// --- ПАРАМЕТРИ СМІТНИКА ---
+bin_height = 90;       // Висота контейнера (мм)
+bin_width = 60;        // Ширина контейнера (мм)
+bin_depth = 45;        // Глибина контейнера (мм)
+wall_thickness = 2.0;  // Товщина стінок (мм)
+
+// --- ПАРАМЕТРИ КРІПЛЕННЯ НА ПЕРИЛА ---
+railing_diameter = 40; // Ширина/діаметр перил (мм)
+clip_height = 50;      // Висота затискача (мм)
+
+// --- ОСНОВНИЙ ЗБІР ДЕТАЛЕЙ ---
+main();
+
+module main() {
+    // Корпус смітника
+    translate([0, 0, 0]) bin_body();
+    
+    // Кріплення на перила (позаду)
+    translate([0, bin_depth/2 + railing_diameter/2, bin_height - clip_height]) 
+        railing_clip();
+
+    // Знімна кришка (зміщена вбік для зручності експорту)
+    translate([bin_width + 20, 0, 0]) 
+        top_lid();
+}
+
+// 1. КОРОБКА СМІТНИКА
+module bin_body() {
+    difference() {
+        // Зовнішній об'єм зі згладженими кутами
+        minkowski() {
+            cube([bin_width - 4, bin_depth - 4, bin_height], center=true);
+            cylinder(r=2, h=0.01, $fn=16);
+        }
+        // Внутрішня порожнина
+        translate([0, 0, wall_thickness])
+            cube([bin_width - wall_thickness*2, bin_depth - wall_thickness*2, bin_height], center=true);
+    }
+}
+
+// 2. КРІПЛЕННЯ (КЛОЧОК) НА ПЕРИЛА
+module railing_clip() {
+    difference() {
+        cube([bin_width - 10, railing_diameter + wall_thickness*2, clip_height], center=true);
+        // Виріз під перила
+        cube([bin_width - 8, railing_diameter, clip_height + 2], center=true);
+        // Відкритий паз знизу для надівання
+        translate([0, 0, -clip_height/2])
+            cube([bin_width - 8, railing_diameter, 10], center=true);
+    }
+}
+
+// 3. ВЕРХНЯ КРИШКА З ОТВОРОМ
+module top_lid() {
+    lid_w = bin_width + 1.5;
+    lid_d = bin_depth + 1.5;
+    
+    difference() {
+        union() {
+            // Верхня пластина
+            cube([lid_w, lid_d, 2], center=true);
+            // Внутрішній бортик для фіксації
+            translate([0, 0, -2])
+                cube([bin_width - 0.5, bin_depth - 0.5, 4], center=true);
+        }
+        // Порожнеча всередині бортика
+        translate([0, 0, -2])
+            cube([bin_width - wall_thickness*2, bin_depth - wall_thickness*2, 5], center=true);
+        
+        // Отвір для стиків IQOS (діаметр 9 мм)
+        translate([0, 0, -5])
+            cylinder(r=4.5, h=10, $fn=32);
+    }
+}
